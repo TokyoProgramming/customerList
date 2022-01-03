@@ -1,0 +1,35 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  text-align: center;
+}
+
+.success,
+.error,
+.delete {
+  color: white;
+  padding: 5px;
+  margin: 5px 0 15px 0;
+}
+.success {
+  background-color: green;
+}
+.error {
+  background-color: red;
+}
+
+.delete {
+  background-color: blue;
+}
+
+.delete-button {
+  cursor: pointer;
+}
+
+th,
+td {
+  text-align: center;
+}
