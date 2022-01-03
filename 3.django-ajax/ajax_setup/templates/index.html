@@ -1,0 +1,262 @@
+{% extends 'base.html' %} 
+{% block content %}
+
+<div class="container">
+	<h1>Customer List</h1>
+	<form id="add-customer-form" method="POST" action='{% url 'customer-list' %}'> 
+	  {% csrf_token %}
+	  <div class="row">
+		<div class="six columns">
+		  <label for="name">Name</label>
+		  <input class="u-full-width" type="text" id="name" name='name' />
+		</div>
+		<div class="six columns">
+		  <label for="email">Email</label>
+		  <input
+		  class="u-full-width"
+		  type="email"
+		  id="email"
+		  name='email'
+		  />
+		</div>
+	  </div>
+	  <div class="row">
+		<div class="eight columns">
+		  <label for="location">Location</label>
+		  <input
+		  class="u-full-width"
+		  type="text"
+		  id="location"
+		  name='location'
+		  />
+		</div>
+		<div class="four columns">
+		  <label for="age">Age</label>
+		  <input type="number" id="age"  name='age' />
+		</div>
+	  </div>
+	  <div class="submit">
+		<input class="u-full-width" data-id='submitForm' type="submit" value="Save" />
+	  </div>
+	</form>
+
+
+	<table class="u-full-width" id='customerTable'>
+	  <thead>
+		<tr>
+		  <th>Name</th>
+		  <th >Email</th>
+		  <th >Age</th>
+		  <th >Location</th>
+		  <th >Delete</th>
+		  <th >Update</th>
+		</tr>
+
+	  </thead>
+	  <tbody id="customer-list">
+		{% for customer in customers %}
+		<tr data-id ="customer-{{customer.id}}" >
+		  <td data-id='customerName{{customer.id}}' name="name">{{customer.name}}</td>
+		  <td data-id='customerEmail{{customer.id}}'>{{customer.email}}</td>
+		  <td data-id='customerLocation{{customer.id}}'>{{customer.location}}</td>
+		  <td data-id='customerAge{{customer.id}}'>{{customer.age}}</td>
+		  <td>
+			<button
+			  class='delete'
+			  onClick='deleteUser({{customer.id}})'
+			  id="{{customer.id}}">
+			  DELETE
+			</button>
+		  </td> 
+		  <td>
+			<button 
+			  class='update'
+			  onClick='updateUser({{customer.id}})'
+			  id="{{customer.id}}">
+			  UPDATE
+			</button>
+		 </td>
+		</tr>
+		{% endfor %}
+	  </tbody>
+	</table>
+  </div>
+{% endblock %} 
+
+
+{% block javascript %}
+$(document).ready(function(){
+	$('#add-customer-form').submit(function(e){
+	  e.preventDefault()
+	  var name = $('#name').val()
+	  var email = $('#email').val()
+	  var location = $('#location').val()
+	  var age = $('#age').val()
+
+	  var button = $('[data-id ="submitForm"]').val()
+	  if(button == 'Save'){
+		$('#name').val('')
+		$('#email').val('')
+		$('#location').val('')
+		$('#age').val('')
+
+		if(name && email && location && age){
+		  $.ajax({
+			type : 'POST',
+			url : '{% url "customer-list" %}',
+			data : {
+			  'name' : name,
+			  'email' : email,
+			  'location' : location,
+			  'age': age
+			}, 
+			dataType: 'json',
+			success: function(data){
+			  appendToTable(data.customer)
+			}
+		  })
+		}else{
+		alert('fill all fields')
+		}
+	  }else{
+		// write update method
+
+		$('#name').val('')
+		$('#email').val('')
+		$('#location').val('')
+		$('#age').val('')
+		var button = $('[data-id ="submitForm"]').val('Save')
+		var id  = $('.submit').children("input").attr('id')
+		$('[data-id = "submitForm"]').attr('id','')
+
+		if(name && email && location && age){
+		  $.ajax({
+			type : 'POST',
+			url : '{% url "customer-update" %}',
+			data : {
+			  'id':id,
+			  'name' : name,
+			  'email' : email,
+			  'location' : location,
+			  'age': age
+			}, 
+			dataType: 'json',
+			success: function(data){
+			  appendToUpdateUser(data)
+
+			}
+		  })
+		}else{
+		alert('fill all fields')
+		}
+
+	  }
+	  $('form#add-customer-form').trigger("reset");
+	  return false;
+
+	})
+
+	function appendToTable(customer){
+		$('#customer-list').append(`
+		<tr data-id ="customer-${customer.id}">
+		  <td data-id='customerName${customer.id}' name="name"> ${customer.name} </td>
+		  <td data-id='customerEmail${customer.id}' name="email"> ${customer.email} </td>
+		  <td data-id='customerLocation${customer.id}' name="location"> ${customer.location} </td>
+		  <td data-id='customerAge${customer.id}' name="age">${customer.age}</td>
+		  <td>
+			<button 
+			  onClick='deleteUser(${customer.id})'
+			  class='delete'
+			  id='${customer.id}'>
+			  DELETE
+			</button>
+		  </td>
+		  <td>
+		  <button 
+			onClick="updateUser(${customer.id})"
+			class='update'
+			id='${customer.id}'>
+			  UPDATE
+			</button>
+		 </td>
+		</tr>
+		`)
+	  }
+
+	function appendToUpdateUser(value){
+	  $('#customer-list tr').each(function(x){
+		var trDataId = $(this).attr('data-id')
+		var split = trDataId.split('-')
+		var id = split[1]
+		var updateCustomerId = value.customer.id.toString()
+		var updateCustomerName = value.customer.name.toString()
+		var updateCustomerEmail = value.customer.email.toString()
+		var updateCustomerLocation = value.customer.location.toString()
+		var updateCustomerAge = value.customer.age.toString()
+		if(updateCustomerId === id){
+		  var name = $(this).find('td').eq(0).text(`${updateCustomerName}`)
+		  var name = $(this).find('td').eq(1).text(`${updateCustomerEmail}`)
+		  var name = $(this).find('td').eq(2).text(`${updateCustomerLocation}`)
+		  var name = $(this).find('td').eq(3).text(`${updateCustomerAge}`)
+		}
+		})
+
+	}
+
+
+
+  })
+  // https://stackoverflow.com/questions/4242541/function-not-calling-within-an-onclick-event
+  function updateUser(id){
+	var customerName = ('customerName'+id)
+	var customerEmail = ('customerEmail'+id)
+	var customerLocation = ('customerLocation'+id)
+	var customerAge = ('customerAge'+id)
+
+	// https://stackoverflow.com/questions/19866509/jquery-get-an-element-by-its-data-id/19866970
+	var name = $(`[data-id ="${customerName}"]`).text()
+	var email = $(`[data-id ="${customerEmail}"]`).text()
+	var location = $(`[data-id ="${customerLocation}"]`).text()
+	var age = $(`[data-id ="${customerAge}"]`).text()
+
+
+	$('#name').val('')
+	$('#email').val('')
+	$('#location').val('')
+	$('#age').val('')
+
+	$('#name').val(name)
+	$('#email').val(email)
+	$('#location').val(location)
+	$('#age').val(age)
+
+	var button = $('[data-id ="submitForm"]').val('Update')
+	$('[data-id = "submitForm"]').attr('id', `${id}`)
+	
+	 
+  }
+
+  function deleteUser(id){
+	console.log(id);
+	var action = confirm("Are you sure you want to delete this user?");
+	if(action != false){
+	  
+	  $.ajax({
+		   url: '{% url "customer-delete" %}',
+			data: {
+			'id': id,
+			},
+			dataType: 'json',
+			success: function (data) {
+			  if(data.deleted){
+				var customerId = 'customer-' + id
+				console.log(customerId);
+				$(`[data-id ="${customerId}"]`).remove()
+
+			  }
+		}
+	  });
+	}
+  }
+
+{% endblock %}
